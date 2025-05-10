@@ -1,0 +1,82 @@
+<style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+    .csc-bandwidth-button-row{display:flex;justify-content:center;max-width:600px;margin:300px auto 20px;padding:0 20px}
+    .csc-bandwidth-toggle-button{width:100%;padding:18px 30px;background:#000;border:2px solid #00ff00;border-radius:10px;color:#fff;font-size:2.4em;font-weight:700;cursor:pointer;text-align:center;transition:all .3s ease}
+    .csc-bandwidth-toggle-button:hover{background:#00ff00;color:#000}
+    .csc-bandwidth-container{background:#1a1a1a;border-radius:15px;box-shadow:0 6px 25px rgba(0,255,0,.15);padding:35px;max-width:600px;margin:20px auto;display:none;color:#fff}
+    .csc-bandwidth-container h2{text-align:center;color:#00ff00;margin-bottom:25px;font-size:1.8em;font-weight:700}
+    .csc-bandwidth-container label{display:block;margin:12px 0 6px;color:#fff;font-weight:500;position:relative}
+    .csc-bandwidth-tooltip{position:absolute;right:0;top:0;color:#00ff00;cursor:help;font-size:.9em}
+    .csc-bandwidth-container input,.csc-bandwidth-container select{width:100%;padding:14px;margin-bottom:10px;border:1px solid #00ff00;border-radius:8px;background:#333;color:#fff;font-size:1em;transition:border-color .3s ease}
+    .csc-bandwidth-container input:focus,.csc-bandwidth-container select:focus{border-color:#00cc00;box-shadow:0 0 6px rgba(0,255,0,.4);outline:0}
+    .csc-bandwidth-error{color:#ff4444;font-size:.85em;margin-bottom:10px;display:none}
+    .csc-bandwidth-gauge{height:20px;background:#333;border-radius:10px;overflow:hidden;margin:15px 0}
+    .csc-bandwidth-gauge-fill{height:100%;background:#00ff00;transition:width .5s ease}
+    @media (max-width:480px){
+        .csc-bandwidth-button-row{margin:250px auto 10px;padding:0 15px}
+        .csc-bandwidth-toggle-button{font-size:2em;padding:14px 20px}
+        .csc-bandwidth-container{padding:25px;margin:15px}
+        .csc-bandwidth-container h2{font-size:1.5em}
+        .csc-bandwidth-container input,.csc-bandwidth-container select{font-size:.95em;padding:12px}
+    }
+</style>
+
+<div class="csc-bandwidth-button-row">
+    <button class="csc-bandwidth-toggle-button" onclick="cscBandwidthToggleCalculator()">Calculate    Bandwidth </button>
+</div>
+<div class="csc-bandwidth-container" id="cscBandwidthContainer">
+    <h2>IP Camera Bandwidth Calculator</h2>
+    <form id="cscBandwidthForm">
+        <label>Cameras <span class="csc-bandwidth-tooltip" title="Number of cameras streaming">?</span></label>
+        <input type="number" id="cscBandwidthCameras" min="1" value="1" placeholder="Cameras">
+        <p class="csc-bandwidth-error" id="cscBandwidthCamerasError">Enter at least 1</p>
+        <label>Resolution <span class="csc-bandwidth-tooltip" title="Camera resolution in pixels">?</span></label>
+        <select id="cscBandwidthResolution" onchange="cscBandwidthToggleCustomResolution()">
+            <option value="1920x1080">1080p (1920x1080)</option>
+            <option value="3840x2160">4K (3840x2160)</option>
+            <option value="7680x4320">8K (7680x4320)</option>
+            <option value="custom">Custom</option>
+        </select>
+        <div id="cscBandwidthCustomResolution" style="display:none">
+            <label>Width (pixels)</label>
+            <input type="number" id="cscBandwidthWidth" min="1" placeholder="Width">
+            <p class="csc-bandwidth-error" id="cscBandwidthWidthError">Enter a valid width</p>
+            <label>Height (pixels)</label>
+            <input type="number" id="cscBandwidthHeight" min="1" placeholder="Height">
+            <p class="csc-bandwidth-error" id="cscBandwidthHeightError">Enter a valid height</p>
+        </div>
+        <label>Frame Rate (FPS) <span class="csc-bandwidth-tooltip" title="Frames per second">?</span></label>
+        <input type="number" id="cscBandwidthFps" min="1" value="30" placeholder="FPS">
+        <p class="csc-bandwidth-error" id="cscBandwidthFpsError">Enter at least 1</p>
+        <label>Bitrate <span class="csc-bandwidth-tooltip" title="Select bitrate or Auto for estimated data rate">?</span></label>
+        <select id="cscBandwidthBitrate">
+            <option value="auto">Auto</option>
+            <option value="1000">Low (1000 kbps)</option>
+            <option value="4000">Medium (4000 kbps)</option>
+            <option value="8000">High (8000 kbps)</option>
+            <option value="16000">Ultra (16000 kbps)</option>
+        </select>
+        <label>Compression <span class="csc-bandwidth-tooltip" title="Codec to reduce bandwidth">?</span></label>
+        <select id="cscBandwidthCompression">
+            <option value="h264">H.264</option>
+            <option value="h265">H.265</option>
+            <option value="av1">AV1</option>
+            <option value="vp9">VP9</option>
+            <option value="mjpeg">MJPEG</option>
+        </select>
+        <label>Stream Type <span class="csc-bandwidth-tooltip" title="Main stream: high quality; sub-stream: mobile">?</span></label>
+        <select id="cscBandwidthStream">
+            <option value="main">Main Stream</option>
+            <option value="sub">Sub-Stream</option>
+        </select>
+        <div>Bandwidth: <span id="cscBandwidthResult">0 Mbps</span></div>
+        <div class="csc-bandwidth-gauge"><div class="csc-bandwidth-gauge-fill" id="cscBandwidthGaugeFill" style="width:0%"></div></div>
+    </form>
+    <p style="text-align:center;margin-top:20px">
+        <a href="/contact" style="color:#00ff00;text-decoration:none">Need help? Contact us!</a>
+    </p>
+</div>
+
+<script>
+const cscBandwidthForm=document.getElementById("cscBandwidthForm"),cscBandwidthInputs=["Cameras","Fps","Width","Height"];function cscBandwidthToggleCustomResolution(){const e=document.getElementById("cscBandwidthResolution").value;document.getElementById("cscBandwidthCustomResolution").style.display="custom"===e?"block":"none",cscBandwidthCalculate()}function cscBandwidthValidateInput(e,t,n,a){const c=document.getElementById(`cscBandwidth${e}`),d=document.getElementById(`cscBandwidth${n}Error`),i=parseFloat(c.value);return!(isNaN(i)||i<t)||(d.style.display="block",!1)?(d.style.display="none",!0):void 0}function cscBandwidthCalculate(){if(cscBandwidthValidateInput("Cameras",1,"Cameras","Enter at least 1")&&cscBandwidthValidateInput("Fps",1,"Fps","Enter at least 1")){let e,t;const n=document.getElementById("cscBandwidthResolution").value;if("custom"===n){if(!cscBandwidthValidateInput("Width",1,"Width","Enter a valid width")||!cscBandwidthValidateInput("Height",1,"Height","Enter a valid height"))return;e=parseInt(document.getElementById("cscBandwidthWidth").value)||0,t=parseInt(document.getElementById("cscBandwidthHeight").value)||0}else[e,t]=n.split("x").map(Number);const a=parseInt(document.getElementById("cscBandwidthCameras").value)||1,c=parseFloat(document.getElementById("cscBandwidthFps").value)||0;let d=parseFloat(document.getElementById("cscBandwidthBitrate").value);const i=document.getElementById("cscBandwidthCompression").value,o=document.getElementById("cscBandwidthStream").value;if(e<=0||t<=0||c<=0)return void(document.getElementById("cscBandwidthResult").textContent="0 Mbps",document.getElementById("cscBandwidthGaugeFill").style.width="0%");if("auto"===d){const n=e*t,a=n*c*.00012,r={h264:.5,h265:.25,av1:.2,vp9:.35,mjpeg:2};d=a/r[i],"sub"===o&&(d*=.3)}let s=d*a/1e3,l="Mbps";s>1e3&&(s/=1e3,l="Gbps"),document.getElementById("cscBandwidthResult").textContent=`${s.toFixed(2)} ${l}`;const r=Math.min(100*(s/("Mbps"===l?100:1)),100);document.getElementById("cscBandwidthGaugeFill").style.width=`${r}%`}}function cscBandwidthToggleCalculator(){const e=document.getElementById("cscBandwidthContainer"),t=document.querySelector(".csc-bandwidth-toggle-button");""!==e.style.display&&"none"!==e.style.display?(e.style.display="none",t.textContent="Calculate Bandwidth"):(e.style.display="block",t.textContent="Done")}cscBandwidthForm.addEventListener("input",cscBandwidthCalculate),cscBandwidthCalculate();
+</script>
